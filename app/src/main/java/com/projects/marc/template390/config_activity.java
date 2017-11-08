@@ -19,10 +19,7 @@ import android.widget.ToggleButton;
 
 import java.sql.Time;
 import java.text.SimpleDateFormat;
-import java.util.Timer;
 
-import static android.R.drawable.checkbox_off_background;
-import static android.R.drawable.checkbox_on_background;
 
 public class config_activity extends AppCompatActivity {
 
@@ -32,11 +29,11 @@ public class config_activity extends AppCompatActivity {
     protected static EditText amountText;
     protected static EditText startText;
     protected static EditText stopText;
-//    protected static MySQLHelper helper;
     protected static ToggleButton toggleFlood;
-//    protected static boolean toggled = false;
     protected static MenuItem mainMenuItem = null;
-
+    protected static ConfigTable currentTable = null;
+    protected static MySQLHelper helper = null;
+    protected static boolean result = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,14 +42,13 @@ public class config_activity extends AppCompatActivity {
         setupUI();
     }
 
-    protected void onStart(){
+    protected void onStart() {
         super.onStart();
         loadCurrent();
-//        makeEditable(false);
     }
 
 
-    protected void setupUI(){
+    protected void setupUI() {
         Log.e("setup", "here");
         saveButton = (Button) findViewById(R.id.saveButton);
         moistureText = (EditText) findViewById(R.id.moistureInput);
@@ -60,16 +56,6 @@ public class config_activity extends AppCompatActivity {
         startText = (EditText) findViewById(R.id.startInput);
         stopText = (EditText) findViewById(R.id.stopInput);
         toggleFlood = (ToggleButton) findViewById(R.id.floodButton);
-
-//        try{
-//            helper = new MySQLHelper();
-//        }catch(Exception e){
-//            Log.e("Activity_config", "Setup: " + e);
-//        }
-//        ConfigTable temp = helper.getConfig();
-//        Log.e("Config", "Stuff:\t" + temp.getDesiredMoisture() + "\t" + temp.getDesiredMoisture());
-
-
         myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
         ActionBar actionBar = getSupportActionBar();
@@ -79,11 +65,9 @@ public class config_activity extends AppCompatActivity {
 
     }
 
-    protected void loadCurrent(){
-        Log.e("load", "here");
+    protected void loadCurrent() {
+//        Log.e("load", "here");
         new ConfigTask().execute();
-
-
     }
 
     @Override
@@ -92,60 +76,12 @@ public class config_activity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    private class ConfigTask extends AsyncTask<Void, Void, Void> {
-        ConfigTable tempTable = null;
-
-        @Override
-        protected Void doInBackground(Void... helper){
-            Log.e("doinbackground", "here");
-            try{
-                tempTable = new MySQLHelper().getConfig();
-            }catch(Exception e){
-                Log.e("Activity_config", "Setup: " + e);
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            Log.e("onPostExe", "here");
-            Log.e("onPostExe", "Config: " + tempTable.getDesiredMoisture());
-            moistureText.setText(Integer.toString(tempTable.getDesiredMoisture()));
-            amountText.setText(Integer.toString(tempTable.getMinimumPumpVolume()));
-            startText.setText(tempTable.getLightStart().toString());
-            stopText.setText(tempTable.getLightStop().toString());
-            // Set toggle button
-            if (tempTable.getDisableFlood())
-                toggleFlood.setActivated(true);
-            else
-                toggleFlood.setActivated(false);
-        }
-    }
-
     @Override
-    public boolean onOptionsItemSelected(MenuItem item){
-        switch (item.getItemId()){
-//            case R.id.action_toggle: {
-//                mainMenuItem = item;
-//                // Switches icons to indicate display mode vs edit mode
-//                if (!toggled) {
-//                    Log.e("TOGGLE?", "toggled on");
-//                    item.setIcon(checkbox_on_background);
-//                    toggled = true;
-//                    makeEditable(true);
-//                    return true;
-//                } else {
-//                    Log.e("TOGGLE?", "toggled off");
-//                    item.setIcon(checkbox_off_background);
-//                    toggled = false;
-//                    makeEditable(false);
-//                    return true;
-//                }
-//            }
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
             // Returns to main activity
-            case android.R.id.home:{
-                Log.e("Config", "Should go back/up");
+            case android.R.id.home: {
+//                Log.e("Config", "Should go back/up");
                 finish();
                 return true;
             }
@@ -155,59 +91,13 @@ public class config_activity extends AppCompatActivity {
     }
 
 
-//    // Swaps between display mode and edit mode.
-//    protected void makeEditable(boolean enable){
-//        if (!enable){
-//            moistureText.setFocusable(false);
-//            amountText.setFocusable(false);
-//            startText.setFocusable(false);
-//            stopText.setFocusable(false);
-//            toggleFlood.setEnabled(false);
-//            saveButton.setVisibility(View.INVISIBLE);
-//        }
-//        else{
-//            moistureText.setFocusableInTouchMode(true);
-//            amountText.setFocusableInTouchMode(true);
-//            startText.setFocusableInTouchMode(true);
-//            stopText.setFocusableInTouchMode(true);
-//            toggleFlood.setEnabled(true);
-//            saveButton.setVisibility(View.VISIBLE);
-//        }
-//    }
-
-    public void onSave(View v){
+    public void onSave(View v) {
         Log.e("onSAve", "gere");
         promptSave();
-
-    }
-
-    private class UpdateConfigTask extends AsyncTask<Void, Void, Void> {
-        ConfigTable tempTable = null;
-
-        @Override
-        protected Void doInBackground(Void... helper) {
-            Log.e("updateConfig", "here");
-            try {
-                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-                tempTable = new ConfigTable(Integer.parseInt(moistureText.getText().toString()),
-                                            Integer.parseInt(amountText.getText().toString()),
-                                            new Time(timeFormat.parse(startText.getText().toString()).getTime()),
-                                            new Time((timeFormat.parse(stopText.getText().toString())).getTime()),
-                                            toggleFlood.isChecked()
-
-                );
-                Log.e("UPDATE", "Stuff:\t" + tempTable.getDesiredMoisture() + "\t" + tempTable.getMinimumPumpVolume() + "\t" + tempTable.getLightStart() + "\t" + tempTable.getLightStop() + "\t" + tempTable.getDisableFlood());
-                new MySQLHelper().updateConfigTable(tempTable);
-            } catch (Exception e) {
-                Log.e("Activity_config", "Setup: " + e);
-            }
-
-            return null;
-        }
     }
 
     // prepares and shows a dialog to confirm deletion
-    public void promptSave(){
+    public void promptSave() {
         AlertDialog dialog = askDelete();
         dialog.show();
     }
@@ -220,16 +110,16 @@ public class config_activity extends AppCompatActivity {
 
         deletePrompt.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
-//                makeEditable(false);
-//                mainMenuItem.setIcon(checkbox_off_background);
                 new UpdateConfigTask().execute();
-                Toast.makeText(config_activity.this, "Changes saved.", Toast.LENGTH_SHORT).show();
+                if (result)
+                    Toast.makeText(config_activity.this, "Changes saved.", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(config_activity.this, "Files not saved, error in attempting to save.", Toast.LENGTH_SHORT).show();
 
                 dialog.dismiss();
             }
 
         });
-
         deletePrompt.setNegativeButton("No", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 loadCurrent();
@@ -240,4 +130,86 @@ public class config_activity extends AppCompatActivity {
         });
         return deletePrompt.create();
     }
+
+    private class UpdateConfigTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... helper) {
+//            Log.e("updateConfig", "here");
+            if (helper != null) {
+                if (checkMinLength()) {
+                    try {
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+                        currentTable = new ConfigTable(Integer.parseInt(moistureText.getText().toString()),
+                                Integer.parseInt(amountText.getText().toString()),
+                                new Time(timeFormat.parse(startText.getText().toString()).getTime()),
+                                new Time((timeFormat.parse(stopText.getText().toString())).getTime()),
+                                toggleFlood.isChecked()
+
+                        );
+                        //                    Log.e("UPDATE", "Stuff:\t" + currentTable.getDesiredMoisture() + "\t" + currentTable.getMinimumPumpVolume() + "\t" + currentTable.getLightStart() + "\t" + currentTable.getLightStop() + "\t" + currentTable.getDisableFlood());
+                        new MySQLHelper().updateConfigTable(currentTable);
+                    } catch (Exception e) {
+                        //                    Log.e("Activity_config", "Setup: " + e);
+                    }
+                    result = true;
+                }
+            }
+            result = false;
+            return null;
+        }
+    }
+
+    public boolean checkMinLength() {
+        if (moistureText.getText().toString().length() > 0 &&
+                amountText.getText().toString().length() > 0 &&
+                startText.getText().toString().length() > 0 &&
+                stopText.getText().toString().length() > 0
+                )
+            return true;
+        return false;
+    }
+
+    private class ConfigTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... something) {
+            Log.e("doinbackground", "here");
+            try {
+                helper = new MySQLHelper();
+                if (helper != null)
+                    currentTable = helper.getConfig();
+            } catch (Exception e) {
+                Log.e("Activity_config", "Setup: " + e);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if (helper != null) {
+//                Log.e("onPostExe", "here");
+//                Log.e("onPostExe", "Config: " + currentTable.getDesiredMoisture());
+                moistureText.setText(Integer.toString(currentTable.getDesiredMoisture()));
+                amountText.setText(Integer.toString(currentTable.getMinimumPumpVolume()));
+                startText.setText(currentTable.getLightStart().toString());
+                stopText.setText(currentTable.getLightStop().toString());
+                // Set toggle button
+                if (currentTable.getDisableFlood())
+                    toggleFlood.setActivated(true);
+                else
+                    toggleFlood.setActivated(false);
+            } else {
+                moistureText.setText("");
+                amountText.setText("");
+                startText.setText("");
+                stopText.setText("");
+                toggleFlood.setActivated(false);
+                Toast.makeText(config_activity.this, "Unable to reach MySQL server", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 }
+
+
+
